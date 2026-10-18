@@ -17,6 +17,7 @@ import { config, getJwtVerificationSecrets } from '../../config/env.config';
 import { MetricsService } from '../../monitoring/metrics.service';
 import { RateTier, RATE_LIMIT_TIERS, HIGH_REPUTATION_THRESHOLD } from './rate-tiers';
 import './rate-limit.d';
+import { getJwtVerificationSecrets } from '../auth/jwt-secrets';
 
 const DEFAULT_POINTS = 100;
 const DEFAULT_DURATION = 60;
@@ -32,6 +33,12 @@ export type RateLimitIdentity = {
 
 /** Minimal shape of the HTTP request object that rate-limiting reads from. */
 export interface RateLimitRequest {
+export interface RateLimitIdentity {
+  scope: 'ip' | 'wallet';
+  value: string;
+}
+
+interface RateLimitRequest {
   ip?: string;
   method?: string;
   url?: string;
@@ -161,6 +168,7 @@ export class RateLimitGuard implements CanActivate {
 
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis | null,
+    private readonly jwtService: JwtService,
     reflector: Reflector,
     @Optional() private readonly metrics?: MetricsService,
     @Optional() private readonly reputationService?: import('../../reputation/reputation.service').ReputationService,
